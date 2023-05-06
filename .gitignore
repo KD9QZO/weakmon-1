@@ -1,0 +1,28 @@
+#
+# .gitignore
+#
+
+## GENERIC, BACKUP & TEMPORARY FILES ##
+
+*~
+*.bak
+*.tmp
+
+
+## CONFIG FILES ##
+
+*.cfg
+
+
+## DOCUMENTATION ##
+
+*.pdf
+
+
+## BUILD ARTIFACTS ##
+
+/__pycache__/
+**/__pycache__/
+*.o
+*.so
+
