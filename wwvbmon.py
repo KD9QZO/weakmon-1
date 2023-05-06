@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 
 #
 # WWVB phase-shift keying sound-card demodulator

@@ -9,6 +9,8 @@ import time
 import socket
 import sys
 
+
+
 # turn an array of 8-bit numbers into a string.
 def hx(a):
     s = ""
@@ -72,7 +74,6 @@ class T:
     # e.g. [ "KB1MBX", 14070987, "PSK31", "FN42", 1200960104 ]
     # modes: JT65, PSK31
     def fmt(self, senders):
-    
         # receiver record format descriptor.
         # callsign, locator, s/w.
         rrf = hx([0x00, 0x03, 0x00, 0x24, 0x99, 0x92, 0x00, 0x03, 0x00, 0x00,
@@ -80,7 +81,7 @@ class T:
                   0x80, 0x04, 0xFF, 0xFF, 0x00, 0x00, 0x76, 0x8F,
                   0x80, 0x08, 0xFF, 0xFF, 0x00, 0x00, 0x76, 0x8F,
                   0x00, 0x00,])
-    
+
         # sender record format descriptor.
         if False:
             # senderCallsign, frequency, sNR (1 byte), iMD (1 byte), mode (1 byte), informationSource, flowStartSeconds.
@@ -92,7 +93,7 @@ class T:
                        0x80, 0x0A, 0xFF, 0xFF, 0x00, 0x00, 0x76, 0x8F,
                        0x80, 0x0B, 0x00, 0x01, 0x00, 0x00, 0x76, 0x8F,
                        0x00, 0x96, 0x00, 0x04,])
-    
+
         if True:
             # senderCallsign, frequency, mode, informationSource=1, senderLocator, flowStartSeconds
             srf = hx([ 0x00, 0x02, 0x00, 0x34, 0x99, 0x93, 0x00, 0x06,
@@ -102,7 +103,7 @@ class T:
                        0x80, 0x0B, 0x00, 0x01, 0x00, 0x00, 0x76, 0x8F,
                        0x80, 0x03, 0xFF, 0xFF, 0x00, 0x00, 0x76, 0x8F,
                        0x00, 0x96, 0x00, 0x04,])
-    
+
         # receiver record.
         # first cook up the data part of the record, since length comes first.
         rr = ""
@@ -112,7 +113,7 @@ class T:
         rr = pad(rr)
         # prepend rr's header.
         rr = hx([0x99, 0x92]) + p16(len(rr) + 4) + rr
-    
+
         # sender records.
         # first the array of per-sender records, so we can find the length.
         sr = ""
@@ -127,7 +128,7 @@ class T:
         sr = pad(sr)
         # prepend the sender records header, with length.
         sr = hx([0x99, 0x93]) + p16(len(sr) + 4) + sr
-    
+
         # now the overall header (16 bytes long).
         h = ""
         h += hx([ 0x00, 0x0a ])
@@ -136,9 +137,9 @@ class T:
         h += p32(self.seq)
         self.seq += 1
         h += p32(self.sessionId)
-    
+
         pkt = h + rrf + srf + rr + sr
-    
+
         return pkt
 
     def dump(self, pkt):
@@ -160,3 +161,4 @@ class T:
             self.send(pkt)
             self.pending = [ ]
             self.last_send = time.time()
+

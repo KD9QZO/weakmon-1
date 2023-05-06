@@ -12,6 +12,7 @@ import sys
 import numpy
 import threading
 
+
 #
 # if already connected, return existing SDRplay,
 # otherwise a new one.
@@ -30,15 +31,15 @@ def open(dev):
 class SDRplay:
     def __init__(self):
         # SDRplay config.
-        self.samplerate = 2048000 # what to tell the SDRplay.
-        self.decimate = 8 # tell SDRplay to give us every 8th sample.
-        self.use_callback = True # use new API callback rather than ReadPacket
+        self.samplerate = 2048000   # what to tell the SDRplay.
+        self.decimate = 8           # tell SDRplay to give us every 8th sample.
+        self.use_callback = True    # use new API callback rather than ReadPacket
 
         # callback appends incoming buffers here.
         # each element is [ i[], q[] ].
         self.cb_bufs = [ ]
-        self.cb_seq = None # next sample num expected by callback
-        self.cb_time = time.time() # UNIX time of end of cb_bufs
+        self.cb_seq = None          # next sample num expected by callback
+        self.cb_time = time.time()  # UNIX time of end of cb_bufs
         self.cb_bufs_mu = threading.Lock()
 
         # on mac, this must exist: /usr/local/lib/libusb-1.0.0.dylib
@@ -51,7 +52,7 @@ class SDRplay:
             "libmirsdrapi-rsp.so.1.95",
             "libmirsdrapi-rsp.so",
             "./libmirsdrapi-rsp.so.1.95",
-            ]
+        ]
         self.lib = None
         for name in names:
             try:
@@ -63,27 +64,27 @@ class SDRplay:
         if self.lib == None:
             sys.stderr.write("sdrplay: could not load API library libmisdrapi-rsp.so\n")
             sys.exit(1)
-        
+
         vers = ctypes.c_float(0.0)
         self.lib.mir_sdr_ApiVersion(ctypes.byref(vers))
         if vers.value < 1.95-0.00001 or vers.value > 1.95+0.00001:
             sys.stderr.write("sdrplay.py: warning: needs API version 1.95, got %f" % (vers.value))
 
-        #self.lib.mir_sdr_DebugEnable(1)
+#       self.lib.mir_sdr_DebugEnable(1)
 
         sps = ctypes.c_int(0)
 
         # type of the callback function
         t1 = ctypes.CFUNCTYPE(ctypes.c_int,
-                              ctypes.POINTER(ctypes.c_int16), # xi
-                              ctypes.POINTER(ctypes.c_int16), # xq
-                              ctypes.c_int, # firstSampleNum
-                              ctypes.c_int, # grChanged
-                              ctypes.c_int, # rfChanged
-                              ctypes.c_int, # fsChanged
-                              ctypes.c_uint, # numSamples
-                              ctypes.c_uint, # reset
-                              ctypes.c_void_p) # cbContext
+                ctypes.POINTER(ctypes.c_int16), # xi
+                ctypes.POINTER(ctypes.c_int16), # xq
+                ctypes.c_int, # firstSampleNum
+                ctypes.c_int, # grChanged
+                ctypes.c_int, # rfChanged
+                ctypes.c_int, # fsChanged
+                ctypes.c_uint, # numSamples
+                ctypes.c_uint, # reset
+                ctypes.c_void_p) # cbContext
         self.cb1 = t1(self.callback)
 
         t2 = ctypes.CFUNCTYPE(ctypes.c_int)
@@ -96,33 +97,33 @@ class SDRplay:
             newGr = ctypes.c_int(40)
             sysGr = ctypes.c_int(40)
             err = self.lib.mir_sdr_StreamInit(ctypes.byref(newGr),
-                                              ctypes.c_double(self.samplerate / 1000000.0),  # sample rate, millions
-                                              ctypes.c_double(1000.0),  # center frequency, MHz
-                                              200,    # mir_sdr_BW_0_200
-                                              0,      # mir_sdr_IF_Zero
-                                              0,      # LNAEnable
-                                              ctypes.byref(sysGr),
-                                              1,      # useGrAltMode
-                                              ctypes.byref(sps),
-                                              self.cb1,
-                                              self.cb2,
-                                              0)
+                    ctypes.c_double(self.samplerate / 1000000.0),  # sample rate, millions
+                    ctypes.c_double(1000.0),  # center frequency, MHz
+                    200,    # mir_sdr_BW_0_200
+                    0,      # mir_sdr_IF_Zero
+                    0,      # LNAEnable
+                    ctypes.byref(sysGr),
+                    1,      # useGrAltMode
+                    ctypes.byref(sps),
+                    self.cb1,
+                    self.cb2,
+                    0)
             if err != 0:
                 sys.stderr.write("sdrplay: mir_sdr_StreamInit failed: %d\n" % (err))
                 sys.exit(1)
         else:
             # older ReadPacket API
             err = self.lib.mir_sdr_Init(40, # gRdB
-                                        ctypes.c_double(self.samplerate / 1000000.0),  # sample rate, millions
-                                        ctypes.c_double(14.076),  # center frequency, MHz
-                                        200,    # mir_sdr_BW_0_200
-                                        0,      # mir_sdr_IF_Zero
-                                        ctypes.byref(sps)) # samplesPerPacket
+                    ctypes.c_double(self.samplerate / 1000000.0),  # sample rate, millions
+                    ctypes.c_double(14.076),  # center frequency, MHz
+                    200,    # mir_sdr_BW_0_200
+                    0,      # mir_sdr_IF_Zero
+                    ctypes.byref(sps)) # samplesPerPacket
             if err != 0:
                 sys.stderr.write("sdrplay: mir_sdr_Init failed: %d\n" % (err))
                 sys.exit(1)
-                                        
-            
+
+
         self.samplesPerPacket = sps.value
         self.expect = None
 
@@ -140,16 +141,16 @@ class SDRplay:
         sysGr = ctypes.c_int(40)
         sps = ctypes.c_int(0)
         err = self.lib.mir_sdr_Reinit(ctypes.byref(newGr), # gRdB
-                                      ctypes.c_double(0.0), # fsMHz
-                                      ctypes.c_double(hz / 1000000.0), # rfMHz
-                                      0, # bwType,
-                                      0, # ifType
-                                      0, # LoMode
-                                      0, # LNAEnable
-                                      ctypes.byref(sysGr), # gRdBsystem,
-                                      1, # useGrAltMode
-                                      ctypes.byref(sps),
-                                      0x04) # mir_sdr_CHANGE_RF_FREQ
+                ctypes.c_double(0.0), # fsMHz
+                ctypes.c_double(hz / 1000000.0), # rfMHz
+                0, # bwType,
+                0, # ifType
+                0, # LoMode
+                0, # LNAEnable
+                ctypes.byref(sysGr), # gRdBsystem,
+                1, # useGrAltMode
+                ctypes.byref(sps),
+                0x04) # mir_sdr_CHANGE_RF_FREQ
         if err != 0:
             sys.stderr.write("sdrplay: mir_sdr_Reinig(rfMHz=%f) failed: %d\n" % (hz/1000000.0, err))
                                       
@@ -277,3 +278,4 @@ class SDRplay:
         buf = buf / 10.0 # get rid of spurious clip warnings
 
         return [ buf, end_time ]
+
